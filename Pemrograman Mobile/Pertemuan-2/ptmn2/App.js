@@ -1,5 +1,5 @@
 // Import Library
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 // Import Component
 import {
@@ -21,6 +21,9 @@ import {
   StyleSheet,
   Alert,
   Platform,
+  KeyboardAvoidingView,
+  Animated,
+  Linking,
 } from 'react-native';
 
 const PROFILE = {
@@ -52,6 +55,18 @@ const SKILL = [
     level: 90,
     color: '#D98F9A',
   },
+  {
+    id: '4',
+    name: 'PHP',
+    level: 80,
+    color: '#86A86B',
+  },
+  {
+    id: '5',
+    name: 'Git & GitHub',
+    level: 75,
+    color: '#F6B0BB',
+  },
 ];
 
 const SECTIONS = [
@@ -67,6 +82,7 @@ const SECTIONS = [
       },
     ],
   },
+
   {
     title: 'Pendidikan',
     data: [
@@ -147,6 +163,27 @@ export default function App() {
   const [sending, setSending] = useState(false);
 
   const [pressing, setPressing] = useState(false);
+
+  // ==========================================
+  // TAMBAHAN: STATE TAB NAVIGASI
+  // ==========================================
+  const [activeTab, setActiveTab] = useState('Info');
+
+  // ==========================================
+  // TAMBAHAN: ANIMASI AVATAR
+  // ==========================================
+  const avatarScale = useRef(
+    new Animated.Value(0.85)
+  ).current;
+
+  useEffect(() => {
+    Animated.spring(avatarScale, {
+      toValue: 1,
+      friction: 5,
+      tension: 45,
+      useNativeDriver: true,
+    }).start();
+  }, [avatarScale]);
 
   // HANDLER
   const handleCardPress = (item) => {
@@ -233,224 +270,311 @@ export default function App() {
         </View>
       </View>
 
+      {/* ==========================================
+          TAMBAHAN: TAB NAVIGASI
+          ========================================== */}
+      <View style={styles.tabBar}>
+        {['Info', 'Skills', 'Kontak'].map((tab) => (
+          <TouchableOpacity
+            key={tab}
+            style={[
+              styles.tabButton,
+              activeTab === tab &&
+                styles.tabButtonActive,
+            ]}
+            onPress={() => setActiveTab(tab)}
+            activeOpacity={0.8}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === tab &&
+                  styles.tabTextActive,
+              ]}
+            >
+              {tab}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
       <ScrollView
         style={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
 
-        {/* PROFILE */}
-        <View style={styles.profileSection}>
+        {/* ==========================================
+            PROFILE
+            TAB: INFO
+            ========================================== */}
+        {activeTab === 'Info' && (
+          <View style={styles.profileSection}>
 
-          <Image
-            source={PROFILE.avatarOffline}
-            style={styles.avatarOffline}
-          />
+            {/* ==========================================
+                TAMBAHAN: ANIMATED AVATAR
+                ========================================== */}
+            <Animated.Image
+              source={PROFILE.avatarOffline}
+              style={[
+                styles.avatarOffline,
+                {
+                  transform: [
+                    {
+                      scale: avatarScale,
+                    },
+                  ],
+                },
+              ]}
+            />
 
-          {openToWork && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>
-                ✅ Open to Work
-              </Text>
-            </View>
-          )}
-
-          <Text style={styles.profileName}>
-            {PROFILE.name}
-          </Text>
-
-          <Text style={styles.profileTitle}>
-            {PROFILE.title}
-          </Text>
-
-          <Text style={styles.profileBio}>
-            {PROFILE.bio}
-          </Text>
-
-          <View style={styles.contactRow}>
-            <Text style={styles.contactItem}>
-              📧 {PROFILE.email}
-            </Text>
-
-            <Text style={styles.contactItem}>
-              📍 {PROFILE.location}
-            </Text>
-          </View>
-
-          <Text style={styles.contactItem}>
-            📱 {PROFILE.phone}
-          </Text>
-
-          {/* SOCIAL MEDIA */}
-          <View style={styles.socialRow}>
-            {SOCIAL.map((s) => (
-              <TouchableOpacity
-                key={s.id}
-                style={styles.socialBtn}
-                onPress={() => Alert.alert('🔗 Link', s.url)}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.socialIcon}>
-                  {s.icon}
-                </Text>
-
-                <Text style={styles.socialLabel}>
-                  {s.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* DOWNLOAD BUTTON */}
-          <Pressable
-            style={({ pressed }) => [
-              styles.downloadBtn,
-              pressed && styles.downloadBtnPressed,
-            ]}
-            onPressIn={() => setPressing(true)}
-            onPressOut={() => setPressing(false)}
-            onPress={() =>
-              Alert.alert(
-                '⬇️ Download',
-                'CV sedang diunduh...'
-              )
-            }
-          >
-            <Text style={styles.downloadBtnText}>
-              {pressing
-                ? '⏳ Mengunduh...'
-                : '⬇️ Download CV (PDF)'}
-            </Text>
-          </Pressable>
-
-        </View>
-
-        <View style={{ height: 40 }} />
-
-        {/* SKILL */}
-        <View style={styles.sectionBox}>
-
-          <Text style={styles.sectionTitle}>
-            🛠️ Keahlian
-          </Text>
-
-          <Text style={styles.sectionSubtitle}>
-            ↳ FlatList: menampilkan list data secara efisien
-          </Text>
-
-          <FlatList
-            data={SKILL}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <SkillCard item={item} />
-            )}
-            scrollEnabled={false}
-            ItemSeparatorComponent={() => (
-              <View style={{ height: 8 }} />
-            )}
-          />
-
-        </View>
-
-        {/* RIWAYAT */}
-        <View style={styles.sectionBox}>
-
-          <Text style={styles.sectionTitle}>
-            📋 Riwayat
-          </Text>
-
-          <Text style={styles.sectionSubtitle}>
-            ↳ SectionList: data dikelompokkan per kategori.
-            Ketuk kartu untuk Modal detail.
-          </Text>
-
-          <SectionList
-            sections={SECTIONS}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <TimelineCard
-                item={item}
-                onPress={handleCardPress}
-              />
-            )}
-            renderSectionHeader={({ section: { title } }) => (
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionHeaderText}>
-                  {title}
+            {openToWork && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>
+                  ✅ Open to Work
                 </Text>
               </View>
             )}
-            scrollEnabled={false}
-            ItemSeparatorComponent={() => (
-              <View style={{ height: 10 }} />
-            )}
-            SectionSeparatorComponent={() => (
-              <View style={{ height: 16 }} />
-            )}
-          />
 
-        </View>
+            <Text style={styles.profileName}>
+              {PROFILE.name}
+            </Text>
 
-        {/* HUBUNGI SAYA */}
-        <View style={styles.sectionBox}>
+            <Text style={styles.profileTitle}>
+              {PROFILE.title}
+            </Text>
 
-          <Text style={styles.sectionTitle}>
-            ✉️ Hubungi Saya
-          </Text>
+            <Text style={styles.profileBio}>
+              {PROFILE.bio}
+            </Text>
 
-          <Text style={styles.sectionSubtitle}>
-            ↳ TextInput, Button, ActivityIndicator
-          </Text>
-
-          {/* INPUT NAMA */}
-          <TextInput
-            style={styles.textInput}
-            placeholder="Nama Anda"
-            placeholderTextColor={COLORS.placeholder}
-            value={senderName}
-            onChangeText={setSenderName}
-            returnKeyType="next"
-            editable={!sending}
-          />
-
-          {/* INPUT PESAN */}
-          <TextInput
-            style={[
-              styles.textInput,
-              styles.textArea,
-            ]}
-            placeholder="Tulis pesan Anda di sini..."
-            placeholderTextColor={COLORS.placeholder}
-            value={message}
-            onChangeText={setMessage}
-            multiline
-            numberOfLines={4}
-            textAlignVertical="top"
-            editable={!sending}
-          />
-
-          {/* LOADING / BUTTON */}
-          {sending ? (
-            <View style={styles.loadingRow}>
-
-              <ActivityIndicator
-                size="large"
-                color={COLORS.accent}
-              />
-
-              <Text style={styles.loadingText}>
-                Mengirim pesan...
+            <View style={styles.contactRow}>
+              <Text style={styles.contactItem}>
+                📧 {PROFILE.email}
               </Text>
 
+              <Text style={styles.contactItem}>
+                📍 {PROFILE.location}
+              </Text>
             </View>
-          ) : (
-            <Button
-              title="📨 Kirim Pesan"
-              color={COLORS.accent}
-              onPress={handleSend}
-            />
-          )}
 
-        </View>
+            <Text style={styles.contactItem}>
+              📱 {PROFILE.phone}
+            </Text>
+
+            {/* SOCIAL MEDIA */}
+            <View style={styles.socialRow}>
+              {SOCIAL.map((s) => (
+                <TouchableOpacity
+                  key={s.id}
+                  style={styles.socialBtn}
+                  onPress={() =>
+                    Alert.alert(
+                      '🔗 Link',
+                      s.url
+                    )
+                  }
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.socialIcon}>
+                    {s.icon}
+                  </Text>
+
+                  <Text style={styles.socialLabel}>
+                    {s.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* DOWNLOAD BUTTON */}
+            <Pressable
+              style={({ pressed }) => [
+                styles.downloadBtn,
+                pressed &&
+                  styles.downloadBtnPressed,
+              ]}
+              onPressIn={() => setPressing(true)}
+              onPressOut={() => setPressing(false)}
+              onPress={() =>
+                Alert.alert(
+                  '⬇️ Download',
+                  'CV sedang diunduh...'
+                )
+              }
+            >
+              <Text style={styles.downloadBtnText}>
+                {pressing
+                  ? '⏳ Mengunduh...'
+                  : '⬇️ Download CV (PDF)'}
+              </Text>
+            </Pressable>
+
+          </View>
+        )}
+
+        {activeTab === 'Info' && (
+          <View style={{ height: 40 }} />
+        )}
+
+        {/* ==========================================
+            SKILL
+            TAB: SKILLS
+            ========================================== */}
+        {activeTab === 'Skills' && (
+          <View style={styles.sectionBox}>
+
+            <Text style={styles.sectionTitle}>
+              🛠️ Keahlian
+            </Text>
+
+            <Text style={styles.sectionSubtitle}>
+              ↳ FlatList: menampilkan list data secara efisien
+            </Text>
+
+            <FlatList
+              data={SKILL}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <SkillCard item={item} />
+              )}
+              scrollEnabled={false}
+              ItemSeparatorComponent={() => (
+                <View style={{ height: 8 }} />
+              )}
+            />
+
+          </View>
+        )}
+
+        {/* ==========================================
+            RIWAYAT
+            TAB: INFO
+            ========================================== */}
+        {activeTab === 'Info' && (
+          <View style={styles.sectionBox}>
+
+            <Text style={styles.sectionTitle}>
+              📋 Riwayat
+            </Text>
+
+            <Text style={styles.sectionSubtitle}>
+              ↳ SectionList: data dikelompokkan per kategori.
+              Ketuk kartu untuk Modal detail.
+            </Text>
+
+            <SectionList
+              sections={SECTIONS}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <TimelineCard
+                  item={item}
+                  onPress={handleCardPress}
+                />
+              )}
+              renderSectionHeader={({ section: { title } }) => (
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionHeaderText}>
+                    {title}
+                  </Text>
+                </View>
+              )}
+              scrollEnabled={false}
+              ItemSeparatorComponent={() => (
+                <View style={{ height: 10 }} />
+              )}
+              SectionSeparatorComponent={() => (
+                <View style={{ height: 16 }} />
+              )}
+            />
+
+          </View>
+        )}
+
+        {/* ==========================================
+            HUBUNGI SAYA
+            TAB: KONTAK
+            ========================================== */}
+        {activeTab === 'Kontak' && (
+          <KeyboardAvoidingView
+            behavior={
+              Platform.OS === 'ios'
+                ? 'padding'
+                : 'height'
+            }
+            keyboardVerticalOffset={
+              Platform.OS === 'ios'
+                ? 90
+                : 20
+            }
+          >
+
+            <View style={styles.sectionBox}>
+
+              <Text style={styles.sectionTitle}>
+                ✉️ Hubungi Saya
+              </Text>
+
+              <Text style={styles.sectionSubtitle}>
+                ↳ TextInput, Button, ActivityIndicator
+              </Text>
+
+              {/* INPUT NAMA */}
+              <TextInput
+                style={styles.textInput}
+                placeholder="Nama Anda"
+                placeholderTextColor={
+                  COLORS.placeholder
+                }
+                value={senderName}
+                onChangeText={setSenderName}
+                returnKeyType="next"
+                editable={!sending}
+              />
+
+              {/* INPUT PESAN */}
+              <TextInput
+                style={[
+                  styles.textInput,
+                  styles.textArea,
+                ]}
+                placeholder="Tulis pesan Anda di sini..."
+                placeholderTextColor={
+                  COLORS.placeholder
+                }
+                value={message}
+                onChangeText={setMessage}
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+                editable={!sending}
+              />
+
+              {/* LOADING / BUTTON */}
+              {sending ? (
+                <View style={styles.loadingRow}>
+
+                  <ActivityIndicator
+                    size="large"
+                    color={COLORS.accent}
+                  />
+
+                  <Text style={styles.loadingText}>
+                    Mengirim pesan...
+                  </Text>
+
+                </View>
+              ) : (
+                <Button
+                  title="📨 Kirim Pesan"
+                  color={COLORS.accent}
+                  onPress={handleSend}
+                />
+              )}
+
+            </View>
+
+          </KeyboardAvoidingView>
+        )}
 
         <View style={{ height: 20 }} />
 
@@ -553,7 +677,6 @@ const COLORS = {
   switchThumbOff: '#8F8580',
 };
 
-
 const styles = StyleSheet.create({
 
   safeArea: {
@@ -565,8 +688,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-
-  /*HEADER / NAVBAR*/
+  /* ==========================================
+     HEADER / NAVBAR
+     ========================================== */
 
   headerBar: {
     backgroundColor: COLORS.strawberry,
@@ -611,8 +735,53 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
+  /* ==========================================
+     TAB NAVIGATION
+     TAMBAHAN TUGAS PENGEMBANGAN
+     ========================================== */
 
-  /*Profile*/
+  tabBar: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.card,
+
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.cardBorder,
+  },
+
+  tabButton: {
+    flex: 1,
+
+    alignItems: 'center',
+
+    paddingVertical: 9,
+
+    borderRadius: 10,
+  },
+
+  tabButtonActive: {
+    backgroundColor: COLORS.strawberrySoft,
+  },
+
+  tabText: {
+    color: COLORS.textMuted,
+
+    fontSize: 12,
+
+    fontWeight: '600',
+  },
+
+  tabTextActive: {
+    color: COLORS.accent,
+
+    fontWeight: '800',
+  },
+
+  /* ==========================================
+     PROFILE
+     ========================================== */
 
   profileSection: {
     alignItems: 'center',
@@ -715,7 +884,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
 
-
   /* Social Media */
 
   socialRow: {
@@ -754,8 +922,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-
-  /* Download button*/
+  /* Download button */
 
   downloadBtn: {
     backgroundColor: COLORS.accent,
@@ -791,8 +958,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 
-
-  /* section*/
+  /* section */
 
   sectionBox: {
     marginHorizontal: 16,
@@ -828,7 +994,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
 
-
   /* section header */
 
   sectionHeader: {
@@ -852,7 +1017,6 @@ const styles = StyleSheet.create({
 
     fontSize: 13,
   },
-
 
   /* skill */
 
@@ -907,8 +1071,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
 
-
-  /* timeline*/
+  /* timeline */
 
   timelineCard: {
     flexDirection: 'row',
@@ -973,7 +1136,6 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
 
-
   /* text input */
 
   textInput: {
@@ -993,62 +1155,50 @@ const styles = StyleSheet.create({
         ? 14
         : 10,
 
-    fontSize: 14,
-
     marginBottom: 12,
+
+    fontSize: 13,
   },
 
   textArea: {
-    height: 100,
-
-    textAlignVertical: 'top',
+    minHeight: 100,
   },
 
-
-  /* loading */
-
   loadingRow: {
-    flexDirection: 'row',
-
     alignItems: 'center',
 
     justifyContent: 'center',
-
-    gap: 12,
 
     paddingVertical: 10,
   },
 
   loadingText: {
-    color: COLORS.accent,
+    marginTop: 8,
 
-    fontSize: 14,
+    color: COLORS.textMuted,
+
+    fontSize: 13,
 
     fontWeight: '600',
   },
-
 
   /* modal */
 
   modalOverlay: {
     flex: 1,
 
-    backgroundColor:
-      'rgba(91,81,77,0.35)',
+    backgroundColor: 'rgba(0,0,0,0.45)',
 
     justifyContent: 'flex-end',
   },
 
   modalBox: {
-    backgroundColor: COLORS.cream,
+    backgroundColor: COLORS.card,
+
+    padding: 24,
 
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-
-    padding: 28,
-
-    borderTopWidth: 3,
-    borderColor: COLORS.accent,
   },
 
   modalTitle: {
@@ -1058,25 +1208,23 @@ const styles = StyleSheet.create({
 
     fontWeight: '800',
 
-    marginBottom: 4,
+    marginBottom: 6,
   },
 
   modalCompany: {
     color: COLORS.accent,
 
-    fontSize: 15,
+    fontSize: 14,
 
     fontWeight: '600',
 
-    marginBottom: 4,
+    marginBottom: 6,
   },
 
   modalPeriod: {
     color: COLORS.textMuted,
 
-    fontSize: 13,
-
-    marginBottom: 16,
+    fontSize: 12,
   },
 
   modalDivider: {
@@ -1084,7 +1232,7 @@ const styles = StyleSheet.create({
 
     backgroundColor: COLORS.cardBorder,
 
-    marginBottom: 16,
+    marginVertical: 16,
   },
 
   modalDesc: {
@@ -1094,15 +1242,15 @@ const styles = StyleSheet.create({
 
     lineHeight: 22,
 
-    marginBottom: 24,
+    marginBottom: 20,
   },
 
   modalCloseBtn: {
     backgroundColor: COLORS.accent,
 
-    borderRadius: 12,
+    paddingVertical: 13,
 
-    paddingVertical: 14,
+    borderRadius: 12,
 
     alignItems: 'center',
   },
@@ -1110,9 +1258,8 @@ const styles = StyleSheet.create({
   modalCloseBtnText: {
     color: COLORS.white,
 
-    fontWeight: '700',
-
     fontSize: 14,
-  },
 
+    fontWeight: '700',
+  },
 });
